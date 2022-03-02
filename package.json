@@ -1,0 +1,17 @@
+{
+  "name": "formula-lint",
+  "version": "1.0.0",
+  "description": "Linter for Formula",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ben Siraphob",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^17.0.21",
+    "tree-sitter": "^0.20.0",
+    "tree-sitter-formula": "github:siraben/tree-sitter-formula",
+    "typescript": "^4.6.2"
+  }
+}
