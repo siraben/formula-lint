@@ -1,13 +1,13 @@
-const Parser = require('tree-sitter');
-const Formula = require('tree-sitter-formula');
-const fs = require('fs');
+import Parser from 'tree-sitter';
+import Formula from 'tree-sitter-formula';
+import { readFileSync } from 'fs';
 const {Query, QueryCursor} = Parser;
 
 const parser = new Parser();
 parser.setLanguage(Formula);
 
 // Load the file "test.4ml"
-const sourceCode = fs.readFileSync('test.4ml', 'utf8');
+const sourceCode = readFileSync('test.4ml', 'utf8');
 const tree = parser.parse(sourceCode);
 
 // Query the domain nodes using the tree-sitter query
@@ -30,3 +30,9 @@ function capturesByName(tree, query, name) {
 
 console.log('Domain declarations:');
 console.log(capturesByName(tree, domainQuery, 'n'));
+
+// Query all the type_decl nodes
+const typeDeclQuery = new Query(Formula, '(type_decl ((bareid) @n)) @d');
+
+console.log('Type declarations:');
+console.log(capturesByName(tree, typeDeclQuery, 'n'));
