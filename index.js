@@ -22,7 +22,7 @@ const tree = parser.parse(sourceCode);
 // Query for redundant assignments
 const sumCalls = new Query(
   Imp,
-  "((func_term name: _ @name (func_term_list (func_or_compr (func_term _ @arg)))) (#match? @name \"sum\")) @func"
+  '((func_term name: _ @name (func_term_list (func_or_compr (func_term _ @arg)))) (#match? @name "sum")) @func'
 );
 
 // Given a raw list of captures, extract the row, column and text.
@@ -55,22 +55,24 @@ function lint(tree, msg, query, name) {
 }
 
 // lint(tree, "Calls to sum:", sumCalls, "arg");
-console.log("Bad cals to sum")
-console.log(sumCalls.captures(tree.rootNode).filter((x) => x.name == "arg")
+console.log("Bad calls to sum");
+console.log(
+  sumCalls
+    .captures(tree.rootNode)
+    .filter((x) => x.name == "arg")
     .map((x) => x.node)
-    .filter((x) => x.type != "atom"
-        || (x.type == "atom"
-            && x.children[0].type != "constant")
-        || (x.type == "atom"
-            && x.children[0].type == "constant"
-            && x.children[0].children[0].type != "real")
+    .filter(
+      (x) =>
+        x.type != "atom" ||
+        (x.type == "atom" && x.children[0].type != "constant") ||
+        (x.type == "atom" &&
+          x.children[0].type == "constant" &&
+          x.children[0].children[0].type != "real")
     )
     .map((x) => x.parent.parent.parent.parent)
-    .map(function (x) {
-        return {
-            start: x.startPosition,
-            end: x.endPosition,
-            text: tree.getText(x),
-        };
-    })
+    .map((x) => ({
+      start: x.startPosition,
+      end: x.endPosition,
+      text: tree.getText(x),
+    }))
 );
