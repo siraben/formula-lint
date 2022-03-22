@@ -11,6 +11,16 @@ domain SymbolicAggregation
                 s = sum(0.0, { c.utilization | 
                     c is Component, Mapping(c, p) }), s > 100.
 
+  badMapping :- p is Processor,
+                s = sum(r, { c.utilization | 
+                    c is Component, Mapping(c, p) }), s > 100.
+  badMapping :- p is Processor,
+                s = sum(c.utilization, { c.utilization | 
+                    c is Component, Mapping(c, p) }), s > 100.
+  badMapping :- p is Processor,
+                s = sum("fadf", { c.utilization | 
+                    c is Component, Mapping(c, p) }), s > 100.
+
   goodModel :- c = count({ p | p is ExtComponent(x, y)}), c = 2.
 
   conforms goodModel.

@@ -1,38 +1,76 @@
-import Parser from 'tree-sitter';
-import Formula from 'tree-sitter-formula';
-import { readFileSync } from 'fs';
-const {Query, QueryCursor} = Parser;
+import Parser from "tree-sitter";
+import Imp from "tree-sitter-formula";
+import { readFileSync } from "fs";
 
-const parser = new Parser();
-parser.setLanguage(Formula);
+const { Query } = Parser;
 
-// Load the file "test.4ml"
-const sourceCode = readFileSync('test.4ml', 'utf8');
-const tree = parser.parse(sourceCode);
+const args = process.argv.slice(2);
 
-// Query the domain nodes using the tree-sitter query
-const domainQuery = new Query(Formula, '(domain (domain_sig_config (domain_sig name: _ @n))) @d');
-
-function formatCaptures(tree, captures) {
-    return captures.map((c) => {
-      const node = c.node;
-      delete c.node;
-      c.text = tree.getText(node);
-      c.row = node.startPosition.row;
-      c.column = node.startPosition.column;
-      return c;
-    });
-  }
-
-function capturesByName(tree, query, name) {
-  return formatCaptures(tree,query.captures(tree.rootNode).filter(x => x.name == name)).map(function (x) { delete x.name; return x; });
+if (args.length != 1) {
+  console.error("Usage: npm run lint <file to lint>");
+  process.exit(1);
 }
 
-console.log('Domain declarations:');
-console.log(capturesByName(tree, domainQuery, 'n'));
+const sourceCode = readFileSync(args[0], "utf8");
 
-// Query all the type_decl nodes
-const typeDeclQuery = new Query(Formula, '(type_decl ((bareid) @n)) @d');
+const parser = new Parser();
+parser.setLanguage(Imp);
 
-console.log('Type declarations:');
-console.log(capturesByName(tree, typeDeclQuery, 'n'));
+// Load the file passed as an argument
+const tree = parser.parse(sourceCode);
+
+// Query for redundant assignments
+const sumCalls = new Query(
+  Imp,
+  "((func_term name: _ @name (func_term_list (func_or_compr (func_term _ @arg)))) (#match? @name \"sum\")) @func"
+);
+
+// Given a raw list of captures, extract the row, column and text.
+function formatCaptures(tree, captures) {
+  return captures.map((c) => {
+    const node = c.node;
+    delete c.node;
+    c.text = tree.getText(node);
+    c.row = node.startPosition.row;
+    c.column = node.startPosition.column;
+    return c;
+  });
+}
+
+// Get the captures corresponding to a capture name
+function capturesByName(tree, query, name) {
+  return formatCaptures(
+    tree,
+    query.captures(tree.rootNode).filter((x) => x.name == name)
+  ).map((x) => {
+    delete x.name;
+    return x;
+  });
+}
+
+// Lint the tree with a given message, query and match name
+function lint(tree, msg, query, name) {
+  console.log(msg);
+  console.log(capturesByName(tree, query, name));
+}
+
+// lint(tree, "Calls to sum:", sumCalls, "arg");
+console.log("Bad cals to sum")
+console.log(sumCalls.captures(tree.rootNode).filter((x) => x.name == "arg")
+    .map((x) => x.node)
+    .filter((x) => x.type != "atom"
+        || (x.type == "atom"
+            && x.children[0].type != "constant")
+        || (x.type == "atom"
+            && x.children[0].type == "constant"
+            && x.children[0].children[0].type != "real")
+    )
+    .map((x) => x.parent.parent.parent.parent)
+    .map(function (x) {
+        return {
+            start: x.startPosition,
+            end: x.endPosition,
+            text: tree.getText(x),
+        };
+    })
+);
