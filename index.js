@@ -63,11 +63,11 @@ console.log(
     .map((x) => x.node)
     .filter(
       (x) =>
-        x.type != "atom" ||
-        (x.type == "atom" && x.children[0].type != "constant") ||
-        (x.type == "atom" &&
+        !(
+          x.type == "atom" &&
           x.children[0].type == "constant" &&
-          x.children[0].children[0].type != "real")
+          x.children[0].children[0].type == "real"
+        )
     )
     .map((x) => x.parent.parent.parent.parent)
     .map((x) => ({
